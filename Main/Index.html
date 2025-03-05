@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Expense Manager</title>
+  <link rel="stylesheet" href="Index css.css">
+  <style>
+    table {
+      width: 80% !important;
+      border-collapse: collapse;
+      margin: 20px auto;
+    }
+    table, th, td {
+      border: 1px solid black;
+    }
+    th, td {
+      padding: 10px;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <div class="pasek">
+    <p id="welcomeMessage">Zalogowano jako:</p>
+    <button type="button" id="statsButton" onclick='gotoStats()'>Statystyki</button>
+    <button type="button" id="logoutButton" onclick='logoutUser()'>Wyloguj</button>
+  </div>
+  
+  <div class="formy">
+    <div class="container" id="addExpenseSection">
+      <h1>Dodaj wydatek</h1>
+      <form id="expenseForm">
+        <label for="expenseAmount">Kwota:</label>
+        <input type="number" id="expenseAmount" name="expenseAmount" required placeholder="zł">
+
+        <label for="expenseCategory">Kategoria:</label>
+        <input type="text" id="expenseCategory" name="expenseCategory" required>
+
+        <label for="expenseDate">Data:</label>
+        <input type="date" id="expenseDate" name="expenseDate" required>
+
+        <button type="submit">Dodaj wydatek</button>
+      </form>
+    </div>
+
+      <div class="container" id="myExpensesSection">
+    
+          <p id="expensesList"></p>
+
+      </div>
+    </div>
+
+<div class="formy">
+    <div class="container" id="addSavings">
+      <h1>Dodaj oszczędność</h1>
+      <form id="savingsForm">
+        <label for="savingsAmount">Cel pieniężny:</label>
+        <input type="number" id="savingsAmount" name="savingsAmount" required placeholder="Zł">
+
+        <label for="savingsCategory">Kategoria:</label>
+        <input type="text" id="savingsCategory" name="savingsCategory" required>
+          
+
+        <button type="submit">Dodaj oszczędność</button>
+      </form>
+    </div>
+
+
+    <div class="container" id="addSavings2">
+
+      <h1>Dodaj wpłatę na oszczędność</h1>
+
+      <form id="savingsDepositForm">
+        <label for="savingsAmount">Kwota:</label>
+        <input type="number" id="savingsDepositAmount" name="savingsDepositAmount" required placeholder="Zł">
+
+        <button type="submit">Wpłać</button>
+
+      </form>
+      </div>
+      <div>
+    </div>
+ 
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.1/dist/js.cookie.min.js"></script>
+  <script src="Index.js"></script>
+  <script>
+    function deleteExercise(expenseId) {
+      if (confirm("Czy na pewno chcesz usunąć wydatek?")) {
+        fetch("http://localhost:3000/deleteExpense", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ Id: expenseId }),
+          credentials: "include",
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              alert("Wydatek został pomyślnie usunięty!");
+              window.location.reload();
+            } else {
+              alert("Błąd podczas usuwania wydatku. Spróbuj ponownie.");
+            }
+          })
+          .catch((error) => {
+            console.error("Błąd podczas wysyłania żądania:", error);
+          });
+      }
+    }
+  
+    function gotoStats() {
+        fetch("http://localhost:3000/getUsername", {
+            method: "GET",
+            credentials: "include",
+        })
+        .then((response) => response.json())
+        .then((userData) => {
+            const userImie = userData.userImie;
+            sessionStorage.setItem('userImie', userImie);
+            window.location.href = "/Stats/Stats.html";
+        })
+        .catch((error) => {
+            console.error("Błąd podczas pobierania danych użytkownika:", error);
+        });
+    }
+  
+    function logoutUser() {
+        fetch("http://localhost:3000/logout", {
+          method: "POST",
+          credentials: "include",
+        })
+          .then((response) => {
+            if (response.ok) {
+              window.location.href = "/Logowanie.html";
+            } else {
+              console.error("Błąd podczas wylogowywania.");
+            }
+          })
+          .catch((error) => {
+            console.error("Błąd podczas wylogowywania:", error);
+          });
+      }
+  
+      
+
+    document.addEventListener("DOMContentLoaded", function () {
+      fetch("http://localhost:3000/checkLoginStatus", {
+        method: "GET",
+        credentials: "include",
+      })
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.loggedIn) {
+            fetch("http://localhost:3000/expensesList")
+              .then((response) => response.text())
+              .then((html) => {
+                document.getElementById("expensesList").innerHTML = html;
+                fetch("http://localhost:3000/getUsername", {
+                    method: "GET",
+                    credentials: "include",
+                  })
+                    .then((response) => response.json())
+                    .then((userData) => {
+                      const welcomeMessage = document.getElementById("welcomeMessage");
+                      welcomeMessage.innerText = "Witaj, " + userData.userImie + "!";
+                const deleteButtons = document.querySelectorAll('.btn-delete');
+                deleteButtons.forEach((button) => {
+                  button.addEventListener('click', () => {
+                    const expenseId = button.dataset.id;
+                    deleteExercise(expenseId);
+                  });
+                });
+              });
+            })
+            .catch((error) => {
+              console.error("Błąd podczas pobierania danych:", error);
+            });
+        } else {
+          window.location.href = "/Logowanie.html";
+        }
+      })
+      .catch((error) => {
+        console.error("Błąd podczas sprawdzania statusu logowania:", error);
+      });
+  
+
+//       fetch("http://localhost:3000/loadCategories", {
+//     method: "GET",
+//     credentials: "include",
+// })
+// .then((response) => response.json())
+// .then((categories) => { 
+
+//     const savingsCategorySelect = document.getElementById("savingsDepositCategory");
+
+
+//     categories.forEach((category) => {
+//         const option = document.createElement("option");
+//         option.value = category.Kategoria;
+//         option.text = category.Kategoria;
+//         savingsCategorySelect.appendChild(option);
+//     });
+// })
+// .catch((error) => {
+//     console.error("Błąd podczas pobierania kategorii:", error);
+// });
+///////////////////////////////
+
+
+// fetch("http://localhost:3000/loadId", {
+//     method: "GET",
+//     credentials: "include",
+// })
+// .then((response) => response.json())
+// .then((data) => { 
+//   const IDs = data.map(obj => obj.Id).join(", ");
+//   const ID = document.getElementById("loadId");
+//   ID.innerText = IDs;
+// })
+// .catch((error) => {
+//     console.error("Błąd podczas pobierania kategorii:", error);
+// });
+
+
+    });
+  </script>
+  
+</body>
+</html>
